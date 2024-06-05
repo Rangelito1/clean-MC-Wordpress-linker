@@ -20,7 +20,7 @@ import { ph } from './messages.js';
 import { Canvas, loadImage } from 'skia-canvas';
 import emoji from 'emojione';
 import mojangson from 'mojangson';
-import { Authflow } from 'prismarine-auth';
+// import { Authflow } from 'prismarine-auth';
 import WebSocketProtocol from '../structures/WebSocketProtocol.js';
 import { FilePath } from '../structures/Protocol.js';
 
@@ -31,15 +31,15 @@ export const MaxEmbedDescriptionLength = 4096;
 export const MaxAutoCompleteChoices = 25;
 export const UUIDRegex = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-5][0-9a-f]{3}-?[089ab][0-9a-f]{3}-?[0-9a-f]{12}$/i;
 
-// Password Auth:
-const flow = new Authflow(process.env.MICROSOFT_EMAIL, './microsoft-cache', {
-    flow: 'msal', // required, but will be ignored because password field is set
-    password: process.env.MICROSOFT_PASSWORD,
-});
-// MSAL Auth:
-// const flow = new Authflow('Lianecx', './microsoft-cache', { flow: 'msal' }, res => {
-//     console.log(res);
+// // Password Auth:
+// const flow = new Authflow(process.env.MICROSOFT_EMAIL, './microsoft-cache', {
+//     flow: 'msal', // required, but will be ignored because password field is set
+//     password: process.env.MICROSOFT_PASSWORD,
 // });
+// // MSAL Auth:
+// // const flow = new Authflow('Lianecx', './microsoft-cache', { flow: 'msal' }, res => {
+// //     console.log(res);
+// // });
 
 
 /**
