@@ -1,11 +1,11 @@
 import minecraft_data from 'minecraft-data';
-import keys from '/home/opc/minecraft-inventory/utilities/keys.js';
-import * as utils from '/home/opc/minecraft-inventory/utilities/utils.js';
+import keys from './utilities/keys.js';
+import * as utils from './utilities/utils.js';
 import fs from 'fs';
 import path from 'path';
-import Canvas from 'skia-canvas';
+import {Canvas,loadImage} from 'skia-canvas';
+import {addPh} from './utilities/messages.js'
 
-// IMPORTANT: This imports have absolute paths, make sure to moddify it in case you want to use this code
 
 const mcData = minecraft_data('1.20.1');
 
@@ -67,6 +67,9 @@ const shulkerSlotCoords = Object.assign(
         .map(([slot, [x, y]]) => [+slot + 18, [x, y]])),
 );
 
+const uuid = '13ac0c2fa99540d9a0928528ce2cd6bd';
+const url = `https://api.mojang.com/user/profile/${uuid}`;
+
 const armorSlotNames = {
     5: keys.commands.inventory.slots.head,
     6: keys.commands.inventory.slots.chest,
@@ -93,37 +96,64 @@ export default class Inventory {
             console.error('utils.readDatFromFile is not a function');
             return;
         }
-    
         // Read the .dat file
         const playerData = await utils.readDatFromFile(playerDataPath);
         if (!playerData) return;
-        console.log('Player Data:', playerData); // Log the player data
+        if ( !playerData.value.Inventory) return;
         // Convert slots to network slots
-        playerData.Inventory = playerData.Inventory.map(item => ({
+        playerData.Inventory = playerData.value.Inventory.value.value.map(item => ({
             ...item,
-            Slot: this.dataSlotToNetworkSlot(item.Slot),
+            Slot: this.dataSlotToNetworkSlot(item.Slot.value),
         }));
 
         // Renderizar el contenedor del inventario
+        let playerName = await fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            // The latest name is the current name
+             return data.name;
+        })
+        .catch(error => {
+            console.error('Error fetching player name:', error);
+        });
         const { canvas: invCanvas, ctx } = await renderContainer(
-            './resources/images/containers/inventory_blank.png',
+            'resources/images/containers/inventory_blank.png',
             playerData.Inventory,
             Object.assign({}, mainInvSlotCoords, armorSlotCoords, hotbarSlotCoords),
-            user.username, // Updated to use the username
+            playerName, // Updated to use the username
             showDetails ? this.pushInvButton.bind(null, itemButtons, Infinity) : () => {},
         );
 
         async function getSkin(uuidOrUsername) {
-            const skinJson = await fetch(`https://minecraft-api.com/api/skins/${uuidOrUsername}/body/10.5/10/json`);
-            const { skin } = await skinJson.json();
-            const image = await Canvas.loadImage(`data:image/png;base64, ${skin}`);
-            //check dimensions of skinImg
-            if(image.width !== 195 || image.height !== 393) return await getSkin('MHF_Steve');
-            return image;
+            // const skinJson = await fetch(`https://minecraft-api.com/api/skins/${uuidOrUsername}/body/10.5/10/json`);
+            // console.log(skinJson)
+            // const { skin } = await skinJson.json();
+            // const image = await loadImage(`data:image/png;base64, ${skin}`);
+            // //check dimensions of skinImg
+            // if(image.width !== 195 || image.height !== 393) return await getSkin('MHF_Steve');
+            // return image;
+            const request = await fetch("https://mc-heads.net/player/Rangelito")
+            let string = '';
+            (new Uint8Array(await request.arrayBuffer())).forEach(
+                (byte) => { string += String.fromCharCode(byte) }
+                )
+            string = btoa(string);
+            const image = await loadImage(`data:image/png;base64, ${string}`);
+            return image
         }
 
-        const skinImg = await getSkin(server.online ? user.uuid : user.username);
-        ctx.drawImage(skinImg, 70, 20, 65, 131);
+        const skinImg = await getSkin(server.online ? user.uuid : playerName);
+        ctx.drawImage(skinImg, 70, 20, 65, 131); 
+        const outputPath = '/home/opc/html/wp-content/uploads/inventory';
+        const fileName = `Inventory_Player_${playerName}.png`;
+        const filePath = path.join(outputPath, fileName);
+    
+        // Asegúrate de que el directorio existe
+        fs.mkdirSync(outputPath, { recursive: true });
+    
+        // Guarda la imagen en el sistema de archivos
+        const buffer = await invCanvas.toBuffer('png');
+        fs.writeFileSync(filePath, buffer);
     }
 
 
@@ -270,6 +300,7 @@ export default class Inventory {
 
     // https://gist.github.com/ddevault/459a1691c3dd751db160
     dataSlotToNetworkSlot(index) {
+
         if(index === 100)
             index = 8;
         else if(index === 101)
@@ -291,21 +322,20 @@ export default class Inventory {
 async function renderContainer(backgroundPath, items, slotCoords, player, loopCode = (item, index) => {}) {
     const canvas = new Canvas(352, 332);
     const ctx = canvas.getContext('2d');
-    const background = await Canvas.loadImage(backgroundPath);
+    const background = await loadImage(backgroundPath);
     ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
     for(let i = 0; i < items.length; i++) {
         const slot = items[i].Slot;
-        const itemId = items[i].id.split(':').pop();
-        const count = items[i].Count;
-        const damage = items[i].tag?.Damage;
-
+        const itemId = items[i].id.value.split(':').pop();
+        const count = items[i].Count.value;
+        const damage = items[i].tag?.value.Damage;
         const [x, y] = slotCoords[slot] ?? [];
         if(!x || !y) continue; //Continue for modded slots
 
         try {
             //Draw image
-            const itemImg = await Canvas.loadImage(`./resources/images/items/${itemId}.png`);
+            const itemImg = await loadImage(`./resources/images/items/${itemId}.png`);
             ctx.drawImage(itemImg, x, y, 32, 32);
         }
         catch(err) {
@@ -352,18 +382,6 @@ async function renderContainer(backgroundPath, items, slotCoords, player, loopCo
 
         loopCode(items[i], i);
     }
-
-    const outputPath = '/home/opc/html/wp-content/uploads/inventory';
-    const fileName = `Inventory_Player_${player}.png`;
-    const filePath = path.join(outputPath, fileName);
-
-    // Asegúrate de que el directorio existe
-    fs.mkdirSync(outputPath, { recursive: true });
-
-    // Guarda la imagen en el sistema de archivos
-    const buffer = await canvas.toBuffer('png');
-    fs.writeFileSync(filePath, buffer);
-
     return { canvas, ctx };
 }
 
