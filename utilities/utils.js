@@ -24,23 +24,14 @@ import mojangson from 'mojangson';
 import WebSocketProtocol from '../structures/WebSocketProtocol.js';
 import { FilePath } from '../structures/Protocol.js';
 import fs from 'fs/promises';
-import { promisify } from 'util';
-
 
 const mcData = McData('1.20.1');
 
-const readFileAsync = promisify(fs.readFile);
-
 export async function readDatFromFile(filePath) {
     try {
-        // Read the file asynchronously
-        const data = await readFileAsync(filePath);
-
-        // Parse the NBT data
-        const parsedData = await prismarineNbt.parse(data);
-
-        // Return the parsed data
-        return parsedData;
+        const buffer = await fs.readFile(filePath)
+        const { parsed} = await prismarineNbt.parse(buffer)
+        return parsed
     } catch (error) {
         console.error(`Error reading DAT file: ${error}`);
         return null;
