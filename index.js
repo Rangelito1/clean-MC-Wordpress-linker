@@ -4,6 +4,7 @@ import * as utils from '/home/opc/minecraft-inventory/utilities/utils.js';
 import fs from 'fs';
 import path from 'path';
 import Canvas from 'skia-canvas';
+
 // IMPORTANT: This imports have absolute paths, make sure to moddify it in case you want to use this code
 
 const mcData = minecraft_data('1.20.1');
@@ -85,13 +86,19 @@ export default class Inventory {
     async execute(file, server) {
         const user = file.user; // Adjusted to retrieve user info from the file object
         const showDetails = false; // Always set to false
-
-        // Obtener el archivo NBT desde la nueva ruta
+    
+        // Get the .dat file from the new path
         const playerDataPath = `/home/opc/html/wp-content/uploads/playerdata/${user.uuid}.dat`;
-        const playerData = await utils.readNbtFromFile(playerDataPath);
+        if (typeof utils.readDatFromFile !== 'function') {
+            console.error('utils.readDatFromFile is not a function');
+            return;
+        }
+    
+        // Read the .dat file
+        const playerData = await utils.readDatFromFile(playerDataPath);
         if (!playerData) return;
-
-        // Convertir slots a network slots
+        console.log('Player Data:', playerData); // Log the player data
+        // Convert slots to network slots
         playerData.Inventory = playerData.Inventory.map(item => ({
             ...item,
             Slot: this.dataSlotToNetworkSlot(item.Slot),
@@ -374,4 +381,3 @@ const inventory = new Inventory();
 for (const file of files) {
     inventory.execute(file, { online: true }); // Pass your server object as needed
 }
-
