@@ -15,7 +15,7 @@ import FtpProtocol from '../structures/FtpProtocol.js';
 import keys from './keys.js';
 import advancementData from '../resources/data/advancements.json' assert { type: 'json' };
 import customStats from '../resources/data/stats_custom.json' assert { type: 'json' };
-import nbt from 'prismarine-nbt';
+import prismarineNbt from 'prismarine-nbt'; // Use 'prismarine-nbt' library for parsing NBT data
 import { ph } from './messages.js';
 import { Canvas, loadImage } from 'skia-canvas';
 import emoji from 'emojione';
@@ -23,8 +23,29 @@ import mojangson from 'mojangson';
 // import { Authflow } from 'prismarine-auth';
 import WebSocketProtocol from '../structures/WebSocketProtocol.js';
 import { FilePath } from '../structures/Protocol.js';
+import fs from 'fs/promises';
+import { promisify } from 'util';
+
 
 const mcData = McData('1.20.1');
+
+const readFileAsync = promisify(fs.readFile);
+
+export async function readDatFromFile(filePath) {
+    try {
+        // Read the file asynchronously
+        const data = await readFileAsync(filePath);
+
+        // Parse the NBT data
+        const parsedData = await prismarineNbt.parse(data);
+
+        // Return the parsed data
+        return parsedData;
+    } catch (error) {
+        console.error(`Error reading DAT file: ${error}`);
+        return null;
+    }
+}
 
 export const MaxEmbedFieldValueLength = 1024;
 export const MaxEmbedDescriptionLength = 4096;
