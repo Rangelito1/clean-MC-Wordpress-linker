@@ -67,8 +67,7 @@ const shulkerSlotCoords = Object.assign(
         .map(([slot, [x, y]]) => [+slot + 18, [x, y]])),
 );
 
-const uuid = '13ac0c2fa99540d9a0928528ce2cd6bd';
-const url = `https://api.mojang.com/user/profile/${uuid}`;
+
 
 const armorSlotNames = {
     5: keys.commands.inventory.slots.head,
@@ -89,7 +88,7 @@ export default class Inventory {
     async execute(file, server) {
         const user = file.user; // Adjusted to retrieve user info from the file object
         const showDetails = false; // Always set to false
-    
+        const url = `https://api.mojang.com/user/profile/${user.uuid}`;
         // Get the .dat file from the new path
         const playerDataPath = `/home/opc/html/wp-content/uploads/playerdata/${user.uuid}.dat`;
         if (typeof utils.readDatFromFile !== 'function') {
@@ -132,7 +131,7 @@ export default class Inventory {
             // //check dimensions of skinImg
             // if(image.width !== 195 || image.height !== 393) return await getSkin('MHF_Steve');
             // return image;
-            const request = await fetch("https://mc-heads.net/player/Rangelito")
+            const request = await fetch("https://mc-heads.net/player/"+playerName)
             let string = '';
             (new Uint8Array(await request.arrayBuffer())).forEach(
                 (byte) => { string += String.fromCharCode(byte) }
