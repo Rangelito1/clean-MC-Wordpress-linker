@@ -144,7 +144,11 @@ export default class Inventory {
         const skinImg = await getSkin(server.online ? user.uuid : playerName);
         ctx.drawImage(skinImg, 70, 20, 65, 131); 
         const outputPath = '/home/opc/html/wp-content/uploads/inventory';
-        const fileName = `Inventory_Player_${playerName}.png`;
+        const now = new Date();
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const nowFormatted = `${minutes}`;
+        
+        const fileName = `Inventory_Player_${playerName}_${nowFormatted}.png`;
         const filePath = path.join(outputPath, fileName);
     
         // Asegúrate de que el directorio existe
@@ -153,6 +157,21 @@ export default class Inventory {
         // Guarda la imagen en el sistema de archivos
         const buffer = await invCanvas.toBuffer('png');
         fs.writeFileSync(filePath, buffer);
+        // Restar 1 minuto
+        const oldNow = new Date(now);
+        oldNow.setMinutes(oldNow.getMinutes() - 1);
+
+        // Formatear de nuevo a "mm"
+        const oldMinutes = oldNow.getMinutes().toString().padStart(2, '0');
+        console.log(`Inventario de ${playerName} actualizado`);
+        const oldFileName = `Inventory_Player_${playerName}_${oldMinutes}.png`;
+        const oldFilePath = path.join(outputPath, oldFileName);
+
+        // Eliminar el archivo
+        if (fs.existsSync(oldFilePath)) {
+            fs.unlinkSync(oldFilePath);
+            console.log(`Archivo ${oldFileName} eliminado.`);
+        }
     }
 
 
